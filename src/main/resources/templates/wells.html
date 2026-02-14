@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wells Inventory - Session [[${session.sessionId}]]</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .table-input { width: 90px; text-align: right; }
+        .calculated { background-color: #e7f3ff; font-weight: bold; }
+        .grand-total { background-color: #d4edda; font-weight: bold; font-size: 1.1rem; }
+        .amount-column { background-color: #fff3cd; font-weight: bold; }
+        .brand-row { border-left: 3px solid #0d6efd; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-info">
+        <div class="container-fluid">
+            <span class="navbar-brand">Wells Inventory & Sales - Session #[[${session.sessionId}]]</span>
+            <span class="text-white">Bar: [[${session.bar.barName}]]</span>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Stage 3: Wells Inventory & Sales Calculation</h5>
+            </div>
+            <div class="card-body">
+                <form id="wellsForm">
+                    <table class="table table-bordered table-hover table-sm">
+                        <thead class="table-dark">
+                            <tr>
+                                <th rowspan="2">Brand</th>
+                                <th rowspan="2">Category</th>
+                                <th rowspan="2">Well Name</th>
+                                <th rowspan="2">Opening Stock</th>
+                                <th rowspan="2">Received</th>
+                                <th rowspan="2">Closing Stock</th>
+                                <th rowspan="2" class="calculated">Sale Stock</th>
+                                <th rowspan="2">Price (₹)</th>
+                                <th rowspan="2" class="amount-column">Amount (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <th:block th:each="product, iterStat : ${products}">
+                                <!-- Product rows with multiple wells -->
+                                <tr class="brand-row" th:each="wellName, wellStat : ${wellNames}">
+                                    <!-- Show brand only on first row -->
+                                    <td th:if="${wellStat.index == 0}" th:rowspan="${wellNames.size()}">
+                                        <strong th:text="${product.productName}"></strong><br>
+                                        <small class="text-muted" th:text="${product.brand}"></small>
+                                    </td>
+                                    <td th:if="${wellStat.index == 0}" th:rowspan="${wellNames.size()}" 
+                                        th:text="${product.category}"></td>
+                                    
+                                    <td><strong th:text="${wellName}"></strong></td>
+                                    <td>
+                                        <input type="number" class="form-control table-input opening-stock" 
+                                               th:data-product="${product.productId}" 
+                                               th:data-well="${wellName}"
+                                               step="0.01" value="0" min="0">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control table-input received-stock" 
+                                               th:data-product="${product.productId}" 
+                                               th:data-well="${wellName}"
+                                               step="0.01" value="0" min="0">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="form-control table-input closing-stock" 
+                                               th:data-product="${product.productId}" 
+                                               th:data-well="${wellName}"
+                                               step="0.01" value="0" min="0">
+                                    </td>
+                                    <td class="calculated">
+                                        <span class="sale-stock" 
+                                              th:data-product="${product.productId}" 
+                                              th:data-well="${wellName}">0.00</span>
+                                    </td>
+                                    <td th:if="${wellStat.index == 0}" th:rowspan="${wellNames.size()}">
+                                        <span class="price" th:data-product="${product.productId}"
+                                              th:text="${prices.get(product.productId) != null ? prices.get(product.productId).sellingPrice : 0}">0.00</span>
+                                    </td>
+                                    <td class="amount-column">
+                                        <span class="amount" 
+                                              th:data-product="${product.productId}" 
+                                              th:data-well="${wellName}">0.00</span>
+                                    </td>
+                                </tr>
+                                
+                                <!-- Product subtotal row -->
+                                <tr class="table-secondary">
+                                    <td colspan="3" class="text-end"><strong>Subtotal - [[${product.productName}]]</strong></td>
+                                    <td class="product-total-opening" th:data-product="${product.productId}">0.00</td>
+                                    <td class="product-total-received" th:data-product="${product.productId}">0.00</td>
+                                    <td class="product-total-closing" th:data-product="${product.productId}">0.00</td>
+                                    <td class="calculated product-total-sale" th:data-product="${product.productId}">0.00</td>
+                                    <td></td>
+                                    <td class="amount-column product-total-amount" th:data-product="${product.productId}">0.00</td>
+                                </tr>
+                            </th:block>
+                        </tbody>
+                        <tfoot class="grand-total">
+                            <tr>
+                                <td colspan="3" class="text-end">GRAND TOTAL:</td>
+                                <td><span id="grandTotalOpening">0.00</span></td>
+                                <td><span id="grandTotalReceived">0.00</span></td>
+                                <td><span id="grandTotalClosing">0.00</span></td>
+                                <td><span id="grandTotalSale">0.00</span></td>
+                                <td></td>
+                                <td><span id="grandTotalAmount">₹ 0.00</span></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a th:href="@{/sessions/distribution/{id}(id=${session.sessionId})}" class="btn btn-secondary">← Back to Distribution</a>
+                        <button type="button" class="btn btn-success btn-lg" onclick="saveAndCommit()">
+                            Save & Commit Session ✓
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:inline="javascript">
+        const sessionId = [[${session.sessionId}]];
+        const products = /*[[${products}]]*/ [];
+        const prices = /*[[${prices}]]*/ {};
+
+        function calculate() {
+            let grandTotalOpening = 0, grandTotalReceived = 0, grandTotalClosing = 0, 
+                grandTotalSale = 0, grandTotalAmount = 0;
+
+            products.forEach(product => {
+                const productId = product.productId;
+                const price = prices[productId] ? prices[productId].sellingPrice : 0;
+                let productTotalOpening = 0, productTotalReceived = 0, 
+                    productTotalClosing = 0, productTotalSale = 0, productTotalAmount = 0;
+
+                document.querySelectorAll(`.opening-stock[data-product="${productId}"]`).forEach(input => {
+                    const wellName = input.dataset.well;
+                    const opening = parseFloat(input.value) || 0;
+                    const received = parseFloat(document.querySelector(`.received-stock[data-product="${productId}"][data-well="${wellName}"]`).value) || 0;
+                    const closing = parseFloat(document.querySelector(`.closing-stock[data-product="${productId}"][data-well="${wellName}"]`).value) || 0;
+                    const sale = opening + received - closing;
+                    const amount = sale * price;
+
+                    document.querySelector(`.sale-stock[data-product="${productId}"][data-well="${wellName}"]`).textContent = sale.toFixed(2);
+                    document.querySelector(`.amount[data-product="${productId}"][data-well="${wellName}"]`).textContent = amount.toFixed(2);
+
+                    productTotalOpening += opening;
+                    productTotalReceived += received;
+                    productTotalClosing += closing;
+                    productTotalSale += sale;
+                    productTotalAmount += amount;
+                });
+
+                document.querySelector(`.product-total-opening[data-product="${productId}"]`).textContent = productTotalOpening.toFixed(2);
+                document.querySelector(`.product-total-received[data-product="${productId}"]`).textContent = productTotalReceived.toFixed(2);
+                document.querySelector(`.product-total-closing[data-product="${productId}"]`).textContent = productTotalClosing.toFixed(2);
+                document.querySelector(`.product-total-sale[data-product="${productId}"]`).textContent = productTotalSale.toFixed(2);
+                document.querySelector(`.product-total-amount[data-product="${productId}"]`).textContent = productTotalAmount.toFixed(2);
+
+                grandTotalOpening += productTotalOpening;
+                grandTotalReceived += productTotalReceived;
+                grandTotalClosing += productTotalClosing;
+                grandTotalSale += productTotalSale;
+                grandTotalAmount += productTotalAmount;
+            });
+
+            document.getElementById('grandTotalOpening').textContent = grandTotalOpening.toFixed(2);
+            document.getElementById('grandTotalReceived').textContent = grandTotalReceived.toFixed(2);
+            document.getElementById('grandTotalClosing').textContent = grandTotalClosing.toFixed(2);
+            document.getElementById('grandTotalSale').textContent = grandTotalSale.toFixed(2);
+            document.getElementById('grandTotalAmount').textContent = '₹ ' + grandTotalAmount.toFixed(2);
+        }
+
+        document.querySelectorAll('input[type="number"]').forEach(input => {
+            input.addEventListener('input', calculate);
+        });
+
+        function saveAndCommit() {
+            const wellsData = [];
+            
+            document.querySelectorAll('.opening-stock').forEach(input => {
+                const productId = input.dataset.product;
+                const wellName = input.dataset.well;
+                const opening = parseFloat(input.value) || 0;
+                const received = parseFloat(document.querySelector(`.received-stock[data-product="${productId}"][data-well="${wellName}"]`).value) || 0;
+                const closing = parseFloat(document.querySelector(`.closing-stock[data-product="${productId}"][data-well="${wellName}"]`).value) || 0;
+
+                if (opening > 0 || received > 0 || closing > 0) {
+                    wellsData.push({
+                        product: { productId: productId },
+                        wellName: wellName,
+                        openingStock: opening,
+                        receivedFromDistribution: received,
+                        closingStock: closing
+                    });
+                }
+            });
+
+            // Save wells data
+            fetch(`/api/sessions/${sessionId}/wells`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(wellsData)
+            })
+            .then(response => response.json())
+            .then(() => {
+                // Commit session
+                return fetch(`/api/sessions/${sessionId}/commit`, { method: 'POST' });
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.message) {
+                    alert('Session committed successfully!\n\nGrand Total Sales: ₹ ' + document.getElementById('grandTotalAmount').textContent);
+                    window.location.href = `/sessions/[[${session.bar.barId}]]`;
+                } else {
+                    alert('Validation Error: ' + result.error);
+                }
+            })
+            .catch(error => {
+                alert('Error: ' + error);
+            });
+        }
+
+        calculate();
+    </script>
+</body>
+</html>
