@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Distribution</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <style>
+        .calculated {
+            background-color: #fff3cd;
+            font-weight: bold;
+        }
+        .status-pending {
+            background-color: #f8d7da;
+        }
+        .status-allocated {
+            background-color: #d4edda;
+        }
+        .grand-total {
+            background-color: #d4edda;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- ================= NAVBAR ================= -->
+
+<nav class="navbar navbar-dark bg-warning">
+    <div class="container-fluid">
+
+        <span class="navbar-brand text-dark">
+            Distribution - Session #
+            <span th:text="${session != null ? session.sessionId : 'N/A'}"></span>
+        </span>
+
+        <span class="text-dark">
+            Bar:
+            <span th:text="${session != null and session.bar != null ? session.bar.barName : 'N/A'}"></span>
+        </span>
+
+    </div>
+</nav>
+
+<!-- ================= BODY ================= -->
+
+<div class="container mt-4">
+
+    <!-- Warning -->
+    <div class="alert alert-warning">
+        ⚠️ ALL transferred stock must be allocated to wells.
+    </div>
+
+    <div class="card shadow-sm">
+
+        <div class="card-header bg-warning">
+            <h5 class="mb-0">Stage 2: Distribution Allocation</h5>
+        </div>
+
+        <div class="card-body">
+
+            <!-- If No Distributions -->
+            <div th:if="${distributions == null or #lists.isEmpty(distributions)}"
+                 class="alert alert-info">
+                No distribution records found for this session.
+            </div>
+
+            <!-- Table -->
+            <div th:if="${distributions != null and !#lists.isEmpty(distributions)}">
+
+                <table class="table table-bordered table-hover">
+                    <thead class="table-dark">
+                    <tr>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th>From Stockroom</th>
+                        <th>Total Allocated</th>
+                        <th>Unallocated</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr th:each="dist : ${distributions}"
+                        th:classappend="${dist.unallocated != null and dist.unallocated > 0} 
+                                        ? 'status-pending' 
+                                        : 'status-allocated'">
+
+                        <!-- Product -->
+                        <td>
+                            <strong th:text="${dist.product != null ? dist.product.productName : 'N/A'}"></strong>
+                            <br>
+                            <small th:text="${dist.product != null ? dist.product.brand : ''}"></small>
+                        </td>
+
+                        <!-- Category -->
+                        <td th:text="${dist.product != null ? dist.product.category : 'N/A'}"></td>
+
+                        <!-- From Stockroom -->
+                        <td th:text="${dist.quantityFromStockroom != null ? dist.quantityFromStockroom : 0}"></td>
+
+                        <!-- Total Allocated -->
+                        <td class="calculated"
+                            th:text="${dist.totalAllocated != null ? dist.totalAllocated : 0}">
+                        </td>
+
+                        <!-- Unallocated -->
+                        <td class="calculated"
+                            th:text="${dist.unallocated != null ? dist.unallocated : 0}">
+                        </td>
+
+                        <!-- Status -->
+                        <td>
+                            <span class="badge"
+                                  th:classappend="${dist.unallocated != null and dist.unallocated > 0} 
+                                                  ? 'bg-danger' 
+                                                  : 'bg-success'"
+                                  th:text="${dist.unallocated != null and dist.unallocated > 0} 
+                                           ? 'PENDING' 
+                                           : 'ALLOCATED'">
+                            </span>
+                        </td>
+
+                    </tr>
+                    </tbody>
+                </table>
+
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="d-flex justify-content-between mt-4">
+
+                <a th:if="${session != null}"
+                   th:href="@{/stockroom/{id}(id=${session.sessionId})}"
+                   class="btn btn-secondary">
+                    ← Back to Stockroom
+                </a>
+
+                <a th:if="${session != null}"
+                   th:href="@{/sessions/wells/{id}(id=${session.sessionId})}"
+                   class="btn btn-primary">
+                    Proceed to Wells →
+                </a>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>
