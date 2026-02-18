@@ -4,155 +4,103 @@
     <meta charset="UTF-8">
     <title>Distribution</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-          rel="stylesheet">
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
-        .calculated {
-            background-color: #fff3cd;
-            font-weight: bold;
-        }
-        .status-pending {
-            background-color: #f8d7da;
-        }
-        .status-allocated {
-            background-color: #d4edda;
-        }
-        .grand-total {
-            background-color: #d4edda;
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
+        .calculated       { background-color: #fff3cd; font-weight: bold; }
+        .status-pending   { background-color: #f8d7da; }
+        .status-allocated { background-color: #d4edda; }
     </style>
 </head>
-
 <body>
-
-<!-- ================= NAVBAR ================= -->
 
 <nav class="navbar navbar-dark bg-warning">
     <div class="container-fluid">
-
         <span class="navbar-brand text-dark">
-            Distribution - Session #
-            <span th:text="${session != null ? session.sessionId : 'N/A'}"></span>
+            <i class="bi bi-diagram-3"></i> Distribution - Session #<span th:text="${sessionId}"></span>
         </span>
-
-        <span class="text-dark">
-            Bar:
-            <span th:text="${session != null and session.bar != null ? session.bar.barName : 'N/A'}"></span>
+        <span class="text-dark fw-bold">
+            Bar: <span th:text="${bar != null ? bar.barName : 'N/A'}"></span>
+            | Shift: <span th:text="${inv.shiftType}"></span>
         </span>
-
     </div>
 </nav>
 
-<!-- ================= BODY ================= -->
-
 <div class="container mt-4">
 
-    <!-- Warning -->
     <div class="alert alert-warning">
-        ⚠️ ALL transferred stock must be allocated to wells.
+        <i class="bi bi-exclamation-triangle"></i>
+        ALL transferred stock from stockroom must be fully allocated to wells before proceeding.
     </div>
 
-    <div class="card shadow-sm">
-
+    <div class="card shadow">
         <div class="card-header bg-warning">
-            <h5 class="mb-0">Stage 2: Distribution Allocation</h5>
+            <h5 class="mb-0"><i class="bi bi-2-circle"></i> Stage 2: Distribution Allocation</h5>
         </div>
-
         <div class="card-body">
 
-            <!-- If No Distributions -->
             <div th:if="${distributions == null or #lists.isEmpty(distributions)}"
                  class="alert alert-info">
-                No distribution records found for this session.
+                <i class="bi bi-info-circle"></i> No distribution records found for this session.
             </div>
 
-            <!-- Table -->
             <div th:if="${distributions != null and !#lists.isEmpty(distributions)}">
-
-                <table class="table table-bordered table-hover">
-                    <thead class="table-dark">
-                    <tr>
-                        <th>Product</th>
-                        <th>Category</th>
-                        <th>From Stockroom</th>
-                        <th>Total Allocated</th>
-                        <th>Unallocated</th>
-                        <th>Status</th>
-                    </tr>
-                    </thead>
-
-                    <tbody>
-                    <tr th:each="dist : ${distributions}"
-                        th:classappend="${dist.unallocated != null and dist.unallocated > 0} 
-                                        ? 'status-pending' 
-                                        : 'status-allocated'">
-
-                        <!-- Product -->
-                        <td>
-                            <strong th:text="${dist.product != null ? dist.product.productName : 'N/A'}"></strong>
-                            <br>
-                            <small th:text="${dist.product != null ? dist.product.brand : ''}"></small>
-                        </td>
-
-                        <!-- Category -->
-                        <td th:text="${dist.product != null ? dist.product.category : 'N/A'}"></td>
-
-                        <!-- From Stockroom -->
-                        <td th:text="${dist.quantityFromStockroom != null ? dist.quantityFromStockroom : 0}"></td>
-
-                        <!-- Total Allocated -->
-                        <td class="calculated"
-                            th:text="${dist.totalAllocated != null ? dist.totalAllocated : 0}">
-                        </td>
-
-                        <!-- Unallocated -->
-                        <td class="calculated"
-                            th:text="${dist.unallocated != null ? dist.unallocated : 0}">
-                        </td>
-
-                        <!-- Status -->
-                        <td>
-                            <span class="badge"
-                                  th:classappend="${dist.unallocated != null and dist.unallocated > 0} 
-                                                  ? 'bg-danger' 
-                                                  : 'bg-success'"
-                                  th:text="${dist.unallocated != null and dist.unallocated > 0} 
-                                           ? 'PENDING' 
-                                           : 'ALLOCATED'">
-                            </span>
-                        </td>
-
-                    </tr>
-                    </tbody>
-                </table>
-
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Product</th>
+                                <th>Category</th>
+                                <th>From Stockroom</th>
+                                <th class="calculated">Total Allocated</th>
+                                <th class="calculated">Unallocated</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="dist : ${distributions}"
+                                th:classappend="${dist.unallocated != null and dist.unallocated > 0}
+                                                ? 'status-pending' : 'status-allocated'">
+                                <td>
+                                    <strong th:text="${dist.product != null ? dist.product.productName : 'N/A'}"></strong><br>
+                                    <small class="text-muted"
+                                           th:text="${dist.product != null ? dist.product.brand : ''}"></small>
+                                </td>
+                                <td th:text="${dist.product != null ? dist.product.category : 'N/A'}"></td>
+                                <td th:text="${dist.quantityFromStockroom != null ? dist.quantityFromStockroom : 0}"></td>
+                                <td class="calculated"
+                                    th:text="${dist.totalAllocated != null ? dist.totalAllocated : 0}"></td>
+                                <td class="calculated"
+                                    th:text="${dist.unallocated != null ? dist.unallocated : 0}"></td>
+                                <td>
+                                    <span class="badge"
+                                          th:classappend="${dist.unallocated != null and dist.unallocated > 0}
+                                                          ? 'bg-danger' : 'bg-success'"
+                                          th:text="${dist.unallocated != null and dist.unallocated > 0}
+                                                   ? 'PENDING' : 'ALLOCATED'">
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
-            <!-- Navigation Buttons -->
             <div class="d-flex justify-content-between mt-4">
-
-                <a th:if="${session != null}"
-                   th:href="@{/stockroom/{id}(id=${session.sessionId})}"
-                   class="btn btn-secondary">
-                    ← Back to Stockroom
+                <!-- BACK: /stockroom/{sessionId} -->
+                <a th:href="@{/stockroom/{id}(id=${sessionId})}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Stockroom
                 </a>
-
-                <a th:if="${session != null}"
-                   th:href="@{/sessions/wells/{id}(id=${session.sessionId})}"
-                   class="btn btn-primary">
-                    Proceed to Wells →
+                <!-- NEXT: /sessions/wells/{sessionId} -->
+                <a th:href="@{/sessions/wells/{id}(id=${sessionId})}" class="btn btn-primary">
+                    Proceed to Wells <i class="bi bi-arrow-right"></i>
                 </a>
-
             </div>
 
         </div>
     </div>
-
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
